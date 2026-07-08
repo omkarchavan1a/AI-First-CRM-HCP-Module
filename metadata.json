@@ -1,0 +1,6 @@
+{
+  "name": "AI-First CRM HCP Module",
+  "description": "Log HCP interactions using conversational AI with simulated LangGraph workflow visualization, structured forms, and architecture blueprint explorer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
