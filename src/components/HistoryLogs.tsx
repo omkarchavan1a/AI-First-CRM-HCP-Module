@@ -68,9 +68,14 @@ export default function HistoryLogs() {
                 <tr key={log.id} className="hover:bg-slate-50 transition-colors text-xs text-slate-700">
                   {/* Logged Date */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5 font-mono text-slate-500">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{new Date(log.timestamp).toLocaleDateString()}</span>
+                    <div className="flex flex-col gap-0.5 font-mono text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                        <span>{log.date || (log.timestamp ? new Date(log.timestamp).toLocaleDateString() : "04/19/2025")}</span>
+                      </div>
+                      {log.time && (
+                        <span className="text-[10px] text-slate-400 pl-5">{log.time}</span>
+                      )}
                     </div>
                   </td>
 

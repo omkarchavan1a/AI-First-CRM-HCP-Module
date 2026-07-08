@@ -15,9 +15,14 @@ export interface SampleDistributed {
 export interface InteractionData {
   hcpName: string;
   hcpSpecialty: string;
+  interactionType: string;
+  date: string;
+  time: string;
+  attendees: string;
   detailingTopic: string;
   productsDiscussed: string[];
   samplesDistributed: SampleDistributed[];
+  materialsShared: string[];
   nextSteps: string;
   followUpDate: string;
   feedbackSentiment: 'Positive' | 'Neutral' | 'Critical' | '';

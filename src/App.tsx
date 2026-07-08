@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { store, useAppDispatch, useAppSelector } from "./store";
-import { fetchHcps, fetchInteractions, setActiveTab } from "./store/crmSlice";
-import Header from "./components/Header";
-import LangGraphVisualizer from "./components/LangGraphVisualizer";
+import { fetchHcps, fetchInteractions } from "./store/crmSlice";
 import ChatInterface from "./components/ChatInterface";
 import StructuredForm from "./components/StructuredForm";
 import TraceAndThoughts from "./components/TraceAndThoughts";
 import HistoryLogs from "./components/HistoryLogs";
 import ArchitectureBlueprint from "./components/ArchitectureBlueprint";
-import { MessageSquare, LayoutGrid, ClipboardList, BookOpen, AlertCircle } from "lucide-react";
+import { Database, BookOpen, Layers, Terminal, AlertCircle } from "lucide-react";
 
 function CRMAppContent() {
   const dispatch = useAppDispatch();
-  const { activeTab, error } = useAppSelector((state) => state.crm);
-  const [mainViewTab, setMainViewTab] = useState<"logger" | "history" | "architecture">("logger");
+  const { error } = useAppSelector((state) => state.crm);
+  const [showConsole, setShowConsole] = useState<boolean>(false);
+  const [consoleTab, setConsoleTab] = useState<"trace" | "database" | "architecture">("trace");
 
   // Load initial HCPs and history records on mount
   useEffect(() => {
@@ -23,130 +22,83 @@ function CRMAppContent() {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
-      {/* 1. Header */}
-      <Header />
-
-      {/* 2. Error Toast/Banner */}
+    <div className="min-h-screen bg-neutral-100 flex flex-col justify-start items-center p-3 sm:p-5 md:p-6 select-none overflow-x-hidden">
+      {/* Dynamic Error Toast/Banner */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-6 py-3.5 flex items-center gap-2.5 text-xs text-red-700">
+        <div className="w-full max-w-[1240px] mb-4 bg-red-50 border border-red-200 p-3 rounded-xl flex items-center gap-2.5 text-xs text-red-700 animate-slideDown shadow-3xs">
           <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
           <p className="font-medium">
-            System Notice: {error}. (Ensure your GEMINI_API_KEY is properly added under Secrets if running the conversational copilot).
+            System Notice: {error}. Make sure GEMINI_API_KEY is configured in your Secrets panel.
           </p>
         </div>
       )}
 
-      {/* 3. Main Stage Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
-        
-        {/* Navigation Tabs for Main Views */}
-        <div className="flex border-b border-slate-200/80 gap-1 pb-px">
-          <button
-            onClick={() => setMainViewTab("logger")}
-            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-xs transition-all cursor-pointer ${
-              mainViewTab === "logger"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span>Active Detailing Logger Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => setMainViewTab("history")}
-            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-xs transition-all cursor-pointer ${
-              mainViewTab === "history"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <ClipboardList className="h-4 w-4" />
-            <span>Interaction Database (SQL)</span>
-          </button>
-
-          <button
-            onClick={() => setMainViewTab("architecture")}
-            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-xs transition-all cursor-pointer ${
-              mainViewTab === "architecture"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <BookOpen className="h-4 w-4" />
-            <span>Architecture & Blueprint Code</span>
-          </button>
+      {/* Main Split Screen Side-by-Side - matches the screenshot perfectly */}
+      <div className="w-full max-w-[1240px] grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column: Logging Form */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <StructuredForm />
         </div>
 
-        {/* VIEW 1: Active Logger Dashboard */}
-        {mainViewTab === "logger" && (
-          <div className="space-y-6 animate-fadeIn">
-            {/* LangGraph Active Node Visualizer */}
-            <LangGraphVisualizer />
+        {/* Right Column: AI Assistant Chat */}
+        <div className="lg:col-span-5 xl:col-span-4">
+          <ChatInterface />
+        </div>
+      </div>
 
-            {/* Split Screen Logging Panel */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column: Logging Inputs (Conversational or Structured) */}
-              <div className="lg:col-span-7 space-y-4">
-                <div className="bg-white border border-slate-200 p-2.5 rounded-xl flex items-center justify-between shadow-2xs">
-                  <div className="flex items-center gap-1.5 pl-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                      Logging Input Method
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => dispatch(setActiveTab("chat"))}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
-                        activeTab === "chat"
-                          ? "bg-teal-600 text-white shadow-xs"
-                          : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
-                      }`}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      <span>AI Conversational Chat</span>
-                    </button>
-                    <button
-                      onClick={() => dispatch(setActiveTab("form"))}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
-                        activeTab === "form"
-                          ? "bg-teal-600 text-white shadow-xs"
-                          : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
-                      }`}
-                    >
-                      <ClipboardList className="h-3.5 w-3.5" />
-                      <span>Structured Form</span>
-                    </button>
-                  </div>
-                </div>
+      {/* Discreet Developer Console Toggle (Preserves database & architecture features out-of-sight of the screenshot layout) */}
+      <div className="w-full max-w-[1240px] mt-6 flex justify-between items-center px-2">
+        <p className="text-[10px] text-slate-400 font-medium">
+          Life-Sciences Interaction Detailing CRM
+        </p>
+        <button
+          onClick={() => setShowConsole(!showConsole)}
+          className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-[10px] font-semibold text-slate-500 hover:text-slate-700 cursor-pointer shadow-3xs transition-all"
+        >
+          <Terminal className="h-3 w-3" />
+          <span>{showConsole ? "Hide Developer Console" : "Show Trace & SQL Database"}</span>
+        </button>
+      </div>
 
-                {activeTab === "chat" ? <ChatInterface /> : <StructuredForm />}
-              </div>
-
-              {/* Right Column: Execution Variable Trace */}
-              <div className="lg:col-span-5">
-                <TraceAndThoughts />
-              </div>
-            </div>
+      {showConsole && (
+        <div className="w-full max-w-[1240px] mt-4 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 animate-fadeIn">
+          <div className="flex border-b border-slate-100 pb-2 gap-4">
+            <button
+              onClick={() => setConsoleTab("trace")}
+              className={`flex items-center gap-1.5 pb-2 border-b-2 font-semibold text-xs transition-all cursor-pointer ${
+                consoleTab === "trace" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Execution State Trace</span>
+            </button>
+            <button
+              onClick={() => setConsoleTab("database")}
+              className={`flex items-center gap-1.5 pb-2 border-b-2 font-semibold text-xs transition-all cursor-pointer ${
+                consoleTab === "database" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400"
+              }`}
+            >
+              <Database className="h-3.5 w-3.5" />
+              <span>SQL History Database</span>
+            </button>
+            <button
+              onClick={() => setConsoleTab("architecture")}
+              className={`flex items-center gap-1.5 pb-2 border-b-2 font-semibold text-xs transition-all cursor-pointer ${
+                consoleTab === "architecture" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400"
+              }`}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>LangGraph Architecture</span>
+            </button>
           </div>
-        )}
 
-        {/* VIEW 2: Audit Logs Database */}
-        {mainViewTab === "history" && (
-          <div className="animate-fadeIn">
-            <HistoryLogs />
+          <div className="pt-2">
+            {consoleTab === "trace" && <TraceAndThoughts />}
+            {consoleTab === "database" && <HistoryLogs />}
+            {consoleTab === "architecture" && <ArchitectureBlueprint />}
           </div>
-        )}
-
-        {/* VIEW 3: Blueprint Explorer */}
-        {mainViewTab === "architecture" && (
-          <div className="animate-fadeIn">
-            <ArchitectureBlueprint />
-          </div>
-        )}
-
-      </main>
+        </div>
+      )}
     </div>
   );
 }

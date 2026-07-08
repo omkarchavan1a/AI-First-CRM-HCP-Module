@@ -4,9 +4,14 @@ import { CRMState, HCP, Interaction, InteractionData, ChatMessage, SampleDistrib
 const initialCurrentLog: InteractionData = {
   hcpName: "",
   hcpSpecialty: "",
+  interactionType: "Meeting",
+  date: "04/19/2025",
+  time: "07:36 PM",
+  attendees: "",
   detailingTopic: "",
   productsDiscussed: [],
   samplesDistributed: [],
+  materialsShared: [],
   nextSteps: "",
   followUpDate: "",
   feedbackSentiment: "",
@@ -65,7 +70,8 @@ export const saveInteraction = createAsyncThunk(
       body: JSON.stringify({
         ...payload.data,
         loggedByChat: payload.loggedByChat,
-        date: new Date().toISOString()
+        date: payload.data.date || new Date().toISOString().split("T")[0],
+        timestamp: new Date().toISOString()
       })
     });
     if (!response.ok) throw new Error("Failed to save interaction");

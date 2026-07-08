@@ -159,6 +159,10 @@ Response JSON MUST conform exactly to the responseSchema provided. Do not includ
               properties: {
                 hcpName: { type: Type.STRING },
                 hcpSpecialty: { type: Type.STRING },
+                interactionType: { type: Type.STRING, description: "e.g., 'Meeting', 'Phone Call', 'Email', 'Video Conference'" },
+                date: { type: Type.STRING, description: "e.g., 'YYYY-MM-DD'" },
+                time: { type: Type.STRING, description: "e.g., '07:36 PM' or standard time" },
+                attendees: { type: Type.STRING, description: "List of other attendees present" },
                 detailingTopic: { type: Type.STRING },
                 productsDiscussed: {
                   type: Type.ARRAY,
@@ -174,6 +178,10 @@ Response JSON MUST conform exactly to the responseSchema provided. Do not includ
                     },
                     required: ["product", "quantity"]
                   }
+                },
+                materialsShared: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
                 },
                 nextSteps: { type: Type.STRING },
                 followUpDate: { type: Type.STRING },

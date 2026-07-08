@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Plus, Trash2, Check, AlertCircle, Save, HelpCircle, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, Check, Save, ShieldCheck, Search, Calendar, Clock, Mic, MicOff, Users, AlertCircle } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../store";
 import { updateCurrentLogField, saveInteraction } from "../store/crmSlice";
-import { SampleDistributed } from "../types";
 
 const PRODUCT_LIST = ["CardioShield", "LipidAway", "HyperTenSoothe", "OncoXen", "InsuloGlow"];
 
@@ -10,51 +9,116 @@ export default function StructuredForm() {
   const dispatch = useAppDispatch();
   const { currentLog, hcps, activeLangGraphNode } = useAppSelector((state) => state.crm);
   
-  // Local state to add drug sample to list
-  const [selectedSampleProduct, setSelectedSampleProduct] = useState(PRODUCT_LIST[0]);
-  const [sampleQty, setSampleQty] = useState(5);
+  // Local states for search/add material modal
+  const [isAddingMaterial, setIsAddingMaterial] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(PRODUCT_LIST[0]);
+  const [materialQty, setMaterialQty] = useState(5);
+
+  // Local state for Simulated Voice Recorder
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [recordingInterval, setRecordingInterval] = useState<any>(null);
 
   const handleFieldChange = <K extends keyof typeof currentLog>(field: K, value: typeof currentLog[K]) => {
     dispatch(updateCurrentLogField({ field, value }));
   };
 
-  const handleHcpSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedName = e.target.value;
-    handleFieldChange("hcpName", selectedName);
+  const handleHcpChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const name = e.target.value;
+    handleFieldChange("hcpName", name);
   };
 
-  const toggleProductDiscussed = (product: string) => {
-    const current = [...currentLog.productsDiscussed];
-    if (current.includes(product)) {
-      handleFieldChange("productsDiscussed", current.filter((p) => p !== product));
-    } else {
-      handleFieldChange("productsDiscussed", [...current, product]);
-    }
-  };
-
-  const addSampleItem = () => {
-    if (!selectedSampleProduct) return;
+  const addMaterialItem = () => {
     const current = [...currentLog.samplesDistributed];
-    const existingIdx = current.findIndex((item) => item.product === selectedSampleProduct);
+    const existingIdx = current.findIndex((item) => item.product === selectedMaterial);
     
     if (existingIdx > -1) {
       const updated = [...current];
       updated[existingIdx] = {
         ...updated[existingIdx],
-        quantity: updated[existingIdx].quantity + sampleQty
+        quantity: updated[existingIdx].quantity + materialQty
       };
       handleFieldChange("samplesDistributed", updated);
     } else {
       handleFieldChange("samplesDistributed", [
         ...current,
-        { product: selectedSampleProduct, quantity: sampleQty }
+        { product: selectedMaterial, quantity: materialQty }
       ]);
     }
+    
+    // Also log to materialsShared
+    if (!currentLog.materialsShared.includes(selectedMaterial)) {
+      handleFieldChange("materialsShared", [...currentLog.materialsShared, selectedMaterial]);
+    }
+
+    // Also auto-add to productsDiscussed if not there
+    if (!currentLog.productsDiscussed.includes(selectedMaterial)) {
+      handleFieldChange("productsDiscussed", [...currentLog.productsDiscussed, selectedMaterial]);
+    }
+
+    setIsAddingMaterial(false);
   };
 
-  const removeSampleItem = (index: number) => {
-    const current = [...currentLog.samplesDistributed];
-    handleFieldChange("samplesDistributed", current.filter((_, i) => i !== index));
+  const removeMaterialItem = (productName: string) => {
+    const currentSamples = currentLog.samplesDistributed.filter((item) => item.product !== productName);
+    handleFieldChange("samplesDistributed", currentSamples);
+    
+    const currentMaterials = currentLog.materialsShared.filter((m) => m !== productName);
+    handleFieldChange("materialsShared", currentMaterials);
+
+    const currentProducts = currentLog.productsDiscussed.filter((p) => p !== productName);
+    handleFieldChange("productsDiscussed", currentProducts);
+  };
+
+  // Simulated voice logging transcription to populate form fields
+  const handleToggleRecording = () => {
+    if (isRecording) {
+      // Stop recording
+      clearInterval(recordingInterval);
+      setIsRecording(false);
+      setRecordingSeconds(0);
+      
+      // Seed values with dynamic, highly realistic medical CRM transcription details
+      const randomSeed = Math.floor(Math.random() * 3);
+      if (randomSeed === 0) {
+        handleFieldChange("hcpName", "Dr. Sarah Jenkins");
+        handleFieldChange("hcpSpecialty", "Cardiology");
+        handleFieldChange("detailingTopic", "Presented the latest clinical trials of CardioShield 10mg indicating positive outcome for Stage 2 hypertension. The doctor requested safety parameters concerning pediatric and renal patients.");
+        handleFieldChange("productsDiscussed", ["CardioShield"]);
+        handleFieldChange("samplesDistributed", [{ product: "CardioShield", quantity: 10 }]);
+        handleFieldChange("materialsShared", ["CardioShield"]);
+        handleFieldChange("nextSteps", "Email renal safety statistics and follow up in two weeks.");
+        handleFieldChange("followUpDate", "2026-07-22");
+        handleFieldChange("feedbackSentiment", "Positive");
+      } else if (randomSeed === 1) {
+        handleFieldChange("hcpName", "Dr. Marcus Vance");
+        handleFieldChange("hcpSpecialty", "Oncology");
+        handleFieldChange("detailingTopic", "Detailed OncoXen therapeutic efficacy against metastatic tumor progression. Dr. Vance was highly receptive to clinical trial Phase III survival metrics.");
+        handleFieldChange("productsDiscussed", ["OncoXen"]);
+        handleFieldChange("samplesDistributed", [{ product: "OncoXen", quantity: 3 }]);
+        handleFieldChange("materialsShared", ["OncoXen"]);
+        handleFieldChange("nextSteps", "Arrange follow-up symposium invitation.");
+        handleFieldChange("followUpDate", "2026-07-25");
+        handleFieldChange("feedbackSentiment", "Positive");
+      } else {
+        handleFieldChange("hcpName", "Dr. Amit Patel");
+        handleFieldChange("hcpSpecialty", "Endocrinology");
+        handleFieldChange("detailingTopic", "Discussed InsuloGlow dual-action glycemic control. Dr. Patel noted positive interest but has reservations concerning gastrointestinal side effects.");
+        handleFieldChange("productsDiscussed", ["InsuloGlow"]);
+        handleFieldChange("samplesDistributed", [{ product: "InsuloGlow", quantity: 5 }]);
+        handleFieldChange("materialsShared", ["InsuloGlow"]);
+        handleFieldChange("nextSteps", "Deliver patient titration guidebook.");
+        handleFieldChange("followUpDate", "2026-07-18");
+        handleFieldChange("feedbackSentiment", "Neutral");
+      }
+    } else {
+      // Start simulated recording timer
+      setIsRecording(true);
+      const interval = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+      setRecordingInterval(interval);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,31 +141,29 @@ export default function StructuredForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6 h-[520px] overflow-y-auto">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h3 className="text-xs font-semibold text-slate-800">Structured CRM Call Log Form</h3>
-          <p className="text-[10px] text-slate-500">
-            Real-time visual sync with the conversational extraction model
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono text-slate-500">
-          Sync Status: <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-7 shadow-xs space-y-6 h-[620px] overflow-y-auto pr-3 scrollbar-thin">
+      {/* Title block matching screenshot */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          Log HCP Interaction
+        </h2>
+        <div className="text-xs font-semibold text-slate-400">
+          Interaction Details
         </div>
       </div>
 
-      {/* Row 1: HCP & Specialty */}
+      {/* Row 1: HCP Name & Interaction Type */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[11px] font-medium text-slate-700 mb-1">
-            Healthcare Professional *
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+            HCP Name
           </label>
           <select
             value={currentLog.hcpName}
-            onChange={handleHcpSelect}
-            className="w-full bg-slate-50 text-xs border border-slate-200 focus:border-teal-500 focus:bg-white text-slate-800 rounded-lg p-2.5 focus:outline-hidden transition-colors"
+            onChange={handleHcpChange}
+            className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 transition-colors focus:outline-none"
           >
-            <option value="">-- Choose HCP (from SQL database) --</option>
+            <option value="">Search or select HCP...</option>
             {hcps.map((h) => (
               <option key={h.id} value={h.name}>
                 {h.name} ({h.specialty} - {h.institution})
@@ -111,139 +173,189 @@ export default function StructuredForm() {
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-slate-700 mb-1">
-            HCP Specialty (Auto-detected)
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+            Interaction Type
           </label>
-          <input
-            type="text"
-            readOnly
-            value={currentLog.hcpSpecialty}
-            placeholder="Specialty will auto-populate"
-            className="w-full bg-slate-100 text-xs border border-slate-200 text-slate-500 rounded-lg p-2.5 outline-hidden cursor-not-allowed"
-          />
+          <select
+            value={currentLog.interactionType}
+            onChange={(e) => handleFieldChange("interactionType", e.target.value)}
+            className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 transition-colors focus:outline-none"
+          >
+            <option value="Meeting">Meeting</option>
+            <option value="Phone Call">Phone Call</option>
+            <option value="Email">Email</option>
+            <option value="Video Conference">Video Conference</option>
+          </select>
         </div>
       </div>
 
-      {/* Row 2: Detailing Topic */}
+      {/* Row 2: Date & Time with Icons on the Right */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+            Date
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={currentLog.date}
+              onChange={(e) => handleFieldChange("date", e.target.value)}
+              placeholder="04/19/2025"
+              className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 pr-9 transition-colors focus:outline-none"
+            />
+            <Calendar className="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+            Time
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={currentLog.time}
+              onChange={(e) => handleFieldChange("time", e.target.value)}
+              placeholder="07:36 PM"
+              className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 pr-9 transition-colors focus:outline-none"
+            />
+            <Clock className="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Attendees */}
       <div>
-        <label className="block text-[11px] font-medium text-slate-700 mb-1">
-          Scientific Detailing Topic & Key Messages *
+        <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+          Attendees
         </label>
-        <textarea
-          rows={2}
-          value={currentLog.detailingTopic}
-          onChange={(e) => handleFieldChange("detailingTopic", e.target.value)}
-          placeholder="Describe the clinical efficacy discussed, safety parameters, or customer objections..."
-          className="w-full bg-slate-50 text-xs border border-slate-200 focus:border-teal-500 focus:bg-white text-slate-800 rounded-lg p-2.5 focus:outline-hidden transition-colors resize-none"
+        <input
+          type="text"
+          value={currentLog.attendees}
+          onChange={(e) => handleFieldChange("attendees", e.target.value)}
+          placeholder="Enter names or search..."
+          className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 transition-colors focus:outline-none"
         />
       </div>
 
-      {/* Row 3: Products Discussed */}
+      {/* Row 4: Topics Discussed */}
       <div>
-        <label className="block text-[11px] font-medium text-slate-700 mb-1">
-          Therapeutic Products Discussed
+        <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+          Topics Discussed
         </label>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {PRODUCT_LIST.map((prod) => {
-            const isDiscussed = currentLog.productsDiscussed.includes(prod);
-            return (
-              <button
-                type="button"
-                key={prod}
-                onClick={() => toggleProductDiscussed(prod)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
-                  isDiscussed
-                    ? "bg-teal-50 border-teal-500 text-teal-700"
-                    : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                {isDiscussed && <Check className="h-3 w-3" />}
-                <span>{prod}</span>
-              </button>
-            );
-          })}
+        <textarea
+          rows={3}
+          value={currentLog.detailingTopic}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleFieldChange("detailingTopic", val);
+            
+            // Scan for medical products discussed in the text
+            const words = val.toLowerCase();
+            const textMatches = PRODUCT_LIST.filter((p) => words.includes(p.toLowerCase()));
+            
+            // Get products already in the distributed samples list
+            const sampleProducts = currentLog.samplesDistributed.map((item) => item.product);
+            
+            // Merge uniquely to prevent duplicate state entries
+            const combined = Array.from(new Set([...textMatches, ...sampleProducts]));
+            handleFieldChange("productsDiscussed", combined);
+          }}
+          placeholder="Enter key discussion points..."
+          className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-3 transition-colors focus:outline-none resize-none"
+        />
+
+        {/* Summarize from Voice Note link styled perfectly like the screenshot */}
+        <div className="mt-2.5 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleToggleRecording}
+            className={`flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer transition-all ${
+              isRecording ? "animate-pulse font-bold text-red-600" : ""
+            }`}
+          >
+            <Mic className="h-3.5 w-3.5" />
+            <span>
+              {isRecording ? `Recording... (${recordingSeconds}s)` : "Summarize from Voice Note (Requires Consent)"}
+            </span>
+          </button>
+          
+          {isRecording && (
+            <div className="flex gap-0.5 items-center">
+              <span className="h-3 w-1 bg-red-500 animate-bounce" style={{ animationDelay: '0.1s' }} />
+              <span className="h-4.5 w-1 bg-red-500 animate-bounce" style={{ animationDelay: '0.2s' }} />
+              <span className="h-2 w-1 bg-red-500 animate-bounce" style={{ animationDelay: '0.3s' }} />
+              <span className="h-3.5 w-1 bg-red-500 animate-bounce" style={{ animationDelay: '0.4s' }} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Row 4: Drug Sample Distribution with PhRMA Compliance Check */}
-      <div className="border border-slate-100 bg-slate-50/50 p-4 rounded-xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-[11px] font-semibold text-slate-800 uppercase tracking-wider">
-            Sample Distribution Engine
-          </h4>
-          <span className="text-[10px] text-slate-400 font-mono">PDMA Compliant</span>
-        </div>
+      {/* Row 5: Materials Shared & Samples Distributed */}
+      <div className="pt-2 space-y-2">
+        <span className="block text-xs font-semibold text-slate-400">
+          Materials Shared / Samples Distributed
+        </span>
+        <span className="block text-xs font-semibold text-slate-700">
+          Materials Shared
+        </span>
 
-        {/* Add Sample Tool */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <select
-            value={selectedSampleProduct}
-            onChange={(e) => setSelectedSampleProduct(e.target.value)}
-            className="bg-white text-xs border border-slate-200 text-slate-700 rounded-lg p-2"
-          >
-            {PRODUCT_LIST.map((prod) => (
-              <option key={prod} value={prod}>
-                {prod} Starter Pack
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            min="1"
-            max="100"
-            value={sampleQty}
-            onChange={(e) => setSampleQty(parseInt(e.target.value) || 1)}
-            className="bg-white text-xs border border-slate-200 text-slate-800 rounded-lg p-2"
-            placeholder="Quantity"
-          />
-
-          <button
-            type="button"
-            onClick={addSampleItem}
-            className="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-3 rounded-lg cursor-pointer transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Samples
-          </button>
-        </div>
-
-        {/* Active Samples List */}
-        {currentLog.samplesDistributed.length > 0 ? (
-          <div className="space-y-1.5 mt-2 bg-white border border-slate-200/60 p-2.5 rounded-lg">
-            {currentLog.samplesDistributed.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-slate-50 px-2 py-1.5 rounded-md text-xs">
-                <span className="font-semibold text-slate-700">
-                  {item.product} Starter Pack
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-medium text-slate-500">Qty: {item.quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeSampleItem(idx)}
-                    className="text-red-500 hover:text-red-600 transition-colors p-1"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+        {/* Materials list container */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 min-h-[90px] flex flex-col justify-between relative">
+          {currentLog.samplesDistributed.length > 0 ? (
+            <div className="space-y-2 w-full pb-10">
+              {currentLog.samplesDistributed.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-slate-50 px-3 py-2 border border-slate-200/60 rounded-lg text-xs">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-700">
+                      {item.product} Starter Pack
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      PhRMA Regulatory tracking logged
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Qty: {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeMaterialItem(item.product)}
+                      className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[10px] text-slate-400 italic py-1">
-            No pharmaceutical drug samples recorded in this interaction.
-          </p>
-        )}
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 italic py-4">
+              No materials added.
+            </p>
+          )}
 
-        {/* Compliance Guard */}
+          {/* Search/Add Button exactly aligned bottom-right like the image */}
+          <div className="absolute bottom-3 right-3">
+            <button
+              type="button"
+              onClick={() => setIsAddingMaterial(true)}
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium py-1.5 px-3 border border-slate-200 rounded-lg shadow-2xs cursor-pointer transition-all"
+            >
+              <Search className="h-3.5 w-3.5 text-blue-500 font-bold" />
+              <span>Search/Add</span>
+              <span className="text-[9px] text-slate-400">▼</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Compliance checklist */}
         {currentLog.samplesDistributed.length > 0 && (
-          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-2.5">
+          <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl flex gap-2.5">
             <ShieldCheck className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-[10px] font-semibold text-amber-800 leading-tight">
                 PDMA / PhRMA Code Signature Compliance Guard
-              </p>
-              <p className="text-[9px] text-amber-700 mt-0.5 leading-relaxed">
-                By ticking this box, you verify that you have obtained the required clinical practitioner digital signature, validated inventory limits, and stored compliance papers.
               </p>
               <label className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-800 font-medium cursor-pointer">
                 <input
@@ -252,17 +364,17 @@ export default function StructuredForm() {
                   onChange={(e) => handleFieldChange("complianceVerified", e.target.checked)}
                   className="rounded border-amber-300 text-teal-600 focus:ring-teal-500"
                 />
-                <span>I confirm PhRMA compliance & signature receipt</span>
+                <span>Confirm PhRMA compliance & signature receipt</span>
               </label>
             </div>
           </div>
         )}
       </div>
 
-      {/* Row 5: Next Steps, Follow Up Date & Sentiment */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Row 6: Next Steps, Follow Up Date & Sentiment (Hidden below scroll by default) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-slate-100">
         <div>
-          <label className="block text-[11px] font-medium text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
             Next Action Steps
           </label>
           <input
@@ -270,30 +382,30 @@ export default function StructuredForm() {
             value={currentLog.nextSteps}
             onChange={(e) => handleFieldChange("nextSteps", e.target.value)}
             placeholder="e.g., Deliver Clinical Trial, Follow up Call"
-            className="w-full bg-slate-50 text-xs border border-slate-200 focus:border-teal-500 focus:bg-white text-slate-800 rounded-lg p-2.5 focus:outline-hidden transition-colors"
+            className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 transition-colors focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
             Follow Up Date
           </label>
           <input
             type="date"
             value={currentLog.followUpDate}
             onChange={(e) => handleFieldChange("followUpDate", e.target.value)}
-            className="w-full bg-slate-50 text-xs border border-slate-200 focus:border-teal-500 focus:bg-white text-slate-800 rounded-lg p-2.5 focus:outline-hidden transition-colors"
+            className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 transition-colors focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
             HCP Reception / Sentiment
           </label>
           <select
             value={currentLog.feedbackSentiment}
             onChange={(e) => handleFieldChange("feedbackSentiment", e.target.value as any)}
-            className="w-full bg-slate-50 text-xs border border-slate-200 focus:border-teal-500 focus:bg-white text-slate-800 rounded-lg p-2.5 focus:outline-hidden transition-colors"
+            className="w-full bg-white text-xs border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-800 rounded-lg p-2.5 transition-colors focus:outline-none"
           >
             <option value="">-- Choose Reception --</option>
             <option value="Positive">Positive / High Interest</option>
@@ -303,19 +415,80 @@ export default function StructuredForm() {
         </div>
       </div>
 
-      {/* Form Submission */}
+      {/* Form Submit Footer */}
       <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
         <p className="text-[10px] text-slate-400">
-          Current LangGraph State: <span className="font-semibold text-slate-600">{activeLangGraphNode}</span>
+          Sync status: <span className="text-emerald-500 font-bold">LIVE SQL LINK</span>
         </p>
         <button
           type="submit"
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-semibold cursor-pointer transition-all shadow-xs"
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-xs font-semibold cursor-pointer transition-all shadow-xs"
         >
           <Save className="h-4 w-4" />
           <span>Commit Log to PostgreSQL</span>
         </button>
       </div>
+
+      {/* Search/Add Material Modal dialog */}
+      {isAddingMaterial && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-xl space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
+              Select Starter Material
+            </h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  Product
+                </label>
+                <select
+                  value={selectedMaterial}
+                  onChange={(e) => setSelectedMaterial(e.target.value)}
+                  className="w-full bg-white text-xs border border-slate-200 rounded-lg p-2.5 focus:outline-none"
+                >
+                  {PRODUCT_LIST.map((prod) => (
+                    <option key={prod} value={prod}>
+                      {prod} Starter Pack
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={materialQty}
+                  onChange={(e) => setMaterialQty(parseInt(e.target.value) || 1)}
+                  className="w-full bg-white text-xs border border-slate-200 rounded-lg p-2.5 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddingMaterial(false)}
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={addMaterialItem}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+              >
+                Add Pack
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
