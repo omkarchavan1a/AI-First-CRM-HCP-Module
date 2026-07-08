@@ -34,14 +34,14 @@ function CRMAppContent() {
       )}
 
       {/* Main Split Screen Side-by-Side - matches the screenshot perfectly */}
-      <div className="w-full max-w-[1240px] grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="w-full max-w-[1240px] grid grid-cols-12 gap-5 items-start">
         {/* Left Column: Logging Form */}
-        <div className="lg:col-span-7 xl:col-span-8">
+        <div className="col-span-7 xl:col-span-8">
           <StructuredForm />
         </div>
 
         {/* Right Column: AI Assistant Chat */}
-        <div className="lg:col-span-5 xl:col-span-4">
+        <div className="col-span-5 xl:col-span-4">
           <ChatInterface />
         </div>
       </div>

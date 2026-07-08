@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Code, Server, Database, Layers, Check, Copy } from "lucide-react";
+import { Code, Server, Database, Layers, Check, Copy, Cpu } from "lucide-react";
 
 export default function ArchitectureBlueprint() {
-  const [activeSubTab, setActiveSubTab] = useState<"langgraph" | "fastapi" | "sql" | "redux">("langgraph");
+  const [activeSubTab, setActiveSubTab] = useState<"langgraph" | "tools" | "fastapi" | "sql" | "redux">("langgraph");
   const [copied, setCopied] = useState(false);
 
   const copyCodeToClipboard = (text: string) => {
@@ -130,6 +130,102 @@ workflow.add_edge("NEXT_STEPS", END)
 
 # Compile LangGraph State Machine applet
 app = workflow.compile()`,
+
+    tools: `# =====================================================================
+# LangGraph AI Agent Tool Definitions (Minimum 5 Specific Sales Tools)
+# =====================================================================
+from typing import Dict, Any, List, Optional
+from langchain_core.tools import tool
+
+# 1. log_interaction_tool: Detail how this captures interaction data (with LLM entity extraction)
+@tool
+def log_interaction_tool(
+    hcp_id: str,
+    raw_unstructured_text: str,
+    override_fields: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Captures raw unstructured medical sales rep interaction notes, uses the 
+    underlying LLM (e.g., gemma2-9b-it on Groq) for summarization, entity 
+    extraction (drug names, sentiments, next steps), and updates the 
+    structured CRM form variables with strict validation.
+    """
+    extracted_entities = llm_extract_and_summarize(raw_unstructured_text)
+    final_payload = merge_and_validate(extracted_entities, override_fields)
+    return {
+        "status": "success",
+        "saved_interaction_id": save_to_db(hcp_id, final_payload),
+        "data": final_payload
+    }
+
+# 2. edit_interaction_tool: Detail how this tool allows modification of logged data
+@tool
+def edit_interaction_tool(
+    interaction_id: str,
+    updated_fields: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Allows safe modification and field-level updates to an already logged 
+    or drafted interaction record. Running this tool updates the database log, 
+    re-validates compliance triggers, and synchronizes the active state cache.
+    """
+    # 1. Fetch current interaction state
+    current_record = fetch_from_db(interaction_id)
+    # 2. Apply modifications securely
+    new_record = {**current_record, **updated_fields}
+    # 3. Re-run compliance validation
+    run_compliance_checker(new_record)
+    # 4. Commit updates to MySQL/Postgres SQL database
+    commit_db_changes(interaction_id, new_record)
+    return {"status": "updated", "interaction_id": interaction_id, "data": new_record}
+
+# 3. search_hcp_database_tool: Look up Healthcare Professionals dynamically
+@tool
+def search_hcp_database_tool(
+    query_string: str,
+    specialty_filter: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """
+    Queries the SQL database of Healthcare Professionals (HCPs) to retrieve 
+    profile cards, valid licenses, contact emails, and active institutions.
+    """
+    return execute_postgres_query(
+        "SELECT id, name, specialty, institution FROM hcps WHERE name LIKE %s", 
+        (f"%{query_string}%",)
+    )
+
+# 4. retrieve_product_materials_tool: Fetch compliant medical brochure & sample limits
+@tool
+def retrieve_product_materials_tool(
+    product_name: str
+) -> Dict[str, Any]:
+    """
+    Fetches certified medical brochures, trial PDFs, or sample indications 
+    for the specific drug product discussed during detailing sessions.
+    """
+    return fetch_product_metadata(product_name)
+
+# 5. check_phrma_compliance_tool: Validate sample distributions against state rules
+@tool
+def check_phrma_compliance_tool(
+    hcp_id: str,
+    product_name: str,
+    sample_quantity: int
+) -> Dict[str, Any]:
+    """
+    Ensures absolute compliance under PhRMA and PDMA guidelines. 
+    Verifies that the requested quantity of drug starter samples is within 
+    state regulatory limits, matches practitioner specialty, and flags 
+    necessary signatures needed for interaction logs.
+    """
+    remaining_limit = get_hcp_annual_sample_allowance(hcp_id, product_name)
+    is_valid = (sample_quantity <= remaining_limit)
+    return {
+        "compliance_verified": is_valid,
+        "remaining_allowance": remaining_limit,
+        "warning_triggered": not is_valid,
+        "message": "Authorized sample limits verified." if is_valid else "PDMA state limit exceeded!"
+    }`,
 
     fastapi: `# =====================================================================
 # Python FastAPI Controller running Groq gemma2-9b-it schema
@@ -301,6 +397,7 @@ const crmSlice = createSlice({
   const getSubTabIcon = (tab: typeof activeSubTab) => {
     switch (tab) {
       case "langgraph": return Layers;
+      case "tools": return Cpu;
       case "fastapi": return Server;
       case "sql": return Database;
       case "redux": return Code;
@@ -341,24 +438,26 @@ const crmSlice = createSlice({
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex gap-2 border-b border-slate-800 pb-3 mb-4">
-        {(["langgraph", "fastapi", "sql", "redux"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveSubTab(tab)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
-              activeSubTab === tab
-                ? "bg-teal-500/15 text-teal-400 border border-teal-500/20"
-                : "bg-transparent text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-            }`}
-          >
-            {tab === "langgraph" && <Layers className="h-3.5 w-3.5" />}
-            {tab === "fastapi" && <Server className="h-3.5 w-3.5" />}
-            {tab === "sql" && <Database className="h-3.5 w-3.5" />}
-            {tab === "redux" && <Code className="h-3.5 w-3.5" />}
-            <span className="capitalize">{tab === "sql" ? "Postgres SQL" : tab === "redux" ? "Redux Slice" : tab}</span>
-          </button>
-        ))}
+      <div className="flex gap-2 border-b border-slate-800 pb-3 mb-4 overflow-x-auto scrollbar-none">
+        {(["langgraph", "tools", "fastapi", "sql", "redux"] as const).map((tab) => {
+          const IconComponent = getSubTabIcon(tab);
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveSubTab(tab)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors shrink-0 ${
+                activeSubTab === tab
+                  ? "bg-teal-500/15 text-teal-400 border border-teal-500/20"
+                  : "bg-transparent text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+              }`}
+            >
+              {IconComponent && <IconComponent className="h-3.5 w-3.5" />}
+              <span className="capitalize">
+                {tab === "sql" ? "Postgres SQL" : tab === "redux" ? "Redux Slice" : tab === "tools" ? "Agent Tools" : tab}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Code Display Area */}
