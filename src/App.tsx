@@ -25,7 +25,7 @@ function CRMAppContent() {
     <div className="min-h-screen bg-neutral-100 flex flex-col justify-start items-center p-3 sm:p-5 md:p-6 select-none overflow-x-hidden">
       {/* Dynamic Error Toast/Banner */}
       {error && (
-        <div className="w-full max-w-[1240px] mb-4 bg-red-50 border border-red-200 p-3 rounded-xl flex items-center gap-2.5 text-xs text-red-700 animate-slideDown shadow-3xs">
+        <div className="w-full max-w-[1536px] mb-4 bg-red-50 border border-red-200 p-3 rounded-xl flex items-center gap-2.5 text-xs text-red-700 animate-slideDown shadow-3xs">
           <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
           <p className="font-medium">
             System Notice: {error}. Make sure GEMINI_API_KEY is configured in your Secrets panel.
@@ -34,20 +34,20 @@ function CRMAppContent() {
       )}
 
       {/* Main Split Screen Side-by-Side - matches the screenshot perfectly */}
-      <div className="w-full max-w-[1240px] grid grid-cols-12 gap-5 items-start">
+      <div className="w-full max-w-[1536px] grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left Column: Logging Form */}
-        <div className="col-span-7 xl:col-span-8">
+        <div className="col-span-1 lg:col-span-7 xl:col-span-8">
           <StructuredForm />
         </div>
 
         {/* Right Column: AI Assistant Chat */}
-        <div className="col-span-5 xl:col-span-4">
+        <div className="col-span-1 lg:col-span-5 xl:col-span-4">
           <ChatInterface />
         </div>
       </div>
 
       {/* Discreet Developer Console Toggle (Preserves database & architecture features out-of-sight of the screenshot layout) */}
-      <div className="w-full max-w-[1240px] mt-6 flex justify-between items-center px-2">
+      <div className="w-full max-w-[1536px] mt-6 flex justify-between items-center px-2">
         <p className="text-[10px] text-slate-400 font-medium">
           Life-Sciences Interaction Detailing CRM
         </p>
@@ -61,7 +61,7 @@ function CRMAppContent() {
       </div>
 
       {showConsole && (
-        <div className="w-full max-w-[1240px] mt-4 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 animate-fadeIn">
+        <div className="w-full max-w-[1536px] mt-4 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 animate-fadeIn">
           <div className="flex border-b border-slate-100 pb-2 gap-4">
             <button
               onClick={() => setConsoleTab("trace")}
