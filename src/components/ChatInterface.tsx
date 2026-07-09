@@ -66,7 +66,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-[620px] bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+    <div className="flex flex-col h-full min-h-[620px] bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-3xs w-full">
       {/* Header Info - Matches Screenshot */}
       <div className="bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">

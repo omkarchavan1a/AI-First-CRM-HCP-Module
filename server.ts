@@ -86,6 +86,110 @@ app.post("/api/interactions", (req, res) => {
   res.status(201).json(newInteraction);
 });
 
+// Endpoint: Extract structured interaction fields from clinical voice/text summaries
+app.post("/api/extract", async (req, res) => {
+  try {
+    const { text, currentData } = req.body;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "GEMINI_API_KEY environment variable is not configured. Please add it in the Secrets panel."
+      });
+    }
+
+    const systemInstruction = `You are a precision clinical data extraction engine for a life-sciences CRM application.
+You are given a raw voice note transcription or summary describing a pharmaceutical representative's visit with a Healthcare Professional (HCP).
+Analyze the input text, align the facts with the current CRM record, and extract or update the structured values.
+
+Current Log State:
+${JSON.stringify(currentData || {}, null, 2)}
+
+Validation List of Medical Products (Do not invent products outside this list):
+- CardioShield
+- LipidAway
+- HyperTenSoothe
+- OncoXen
+- InsuloGlow
+
+Extract the following values and return them in the specified format:
+- hcpName: Dr. Name (must be one of: "Dr. Sarah Jenkins", "Dr. Marcus Vance", "Dr. Elena Rostova", "Dr. Amit Patel" if mentioned or matching closely, or extract the name given)
+- hcpSpecialty: e.g., "Cardiology", "Oncology", "Pediatrics", "Endocrinology" (match to the hcp if known, or extract)
+- interactionType: "Meeting", "Phone Call", "Email", or "Video Conference"
+- date: "MM/DD/YYYY" or "YYYY-MM-DD"
+- time: e.g., "07:36 PM" or current time if mentioned
+- attendees: Other clinical assistants or personnel present
+- detailingTopic: A clean, concise summary paragraph describing the topics detailed
+- productsDiscussed: Array of validated product names discussed
+- samplesDistributed: Array of objects with product name and quantity. e.g., [{"product": "CardioShield", "quantity": 10}]
+- materialsShared: Array of product names or clinical materials shared
+- nextSteps: Concise description of follow-up tasks
+- followUpDate: "YYYY-MM-DD" formatted follow-up date
+- feedbackSentiment: "Positive", "Neutral", "Critical", or ""
+- complianceVerified: Set to true if a sample is distributed and PhRMA/PDMA guidelines are confirmed, otherwise keep current state.
+
+Return a JSON object conforming strictly to the requested response schema.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [
+        { text: systemInstruction },
+        { text: `Voice Transcript Note to extract:\n"${text}"` }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            extractedData: {
+              type: Type.OBJECT,
+              properties: {
+                hcpName: { type: Type.STRING },
+                hcpSpecialty: { type: Type.STRING },
+                interactionType: { type: Type.STRING },
+                date: { type: Type.STRING },
+                time: { type: Type.STRING },
+                attendees: { type: Type.STRING },
+                detailingTopic: { type: Type.STRING },
+                productsDiscussed: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
+                },
+                samplesDistributed: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      product: { type: Type.STRING },
+                      quantity: { type: Type.NUMBER }
+                    },
+                    required: ["product", "quantity"]
+                  }
+                },
+                materialsShared: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
+                },
+                nextSteps: { type: Type.STRING },
+                followUpDate: { type: Type.STRING },
+                feedbackSentiment: { type: Type.STRING },
+                complianceVerified: { type: Type.BOOLEAN }
+              },
+              required: ["hcpName", "detailingTopic"]
+            }
+          },
+          required: ["extractedData"]
+        }
+      }
+    });
+
+    const parsedResult = JSON.parse(response.text || "{}");
+    res.json(parsedResult);
+  } catch (error: any) {
+    console.error("Gemini Voice Extraction Error:", error);
+    res.status(500).json({ error: error.message || "An error occurred while parsing clinical transcription." });
+  }
+});
+
 // Endpoint: Run Conversational LLM with state tracking (simulating LangGraph agent)
 app.post("/api/chat", async (req, res) => {
   try {

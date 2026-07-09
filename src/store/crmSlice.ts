@@ -126,6 +126,22 @@ const crmSlice = createSlice({
         }
       }
     },
+    updateCurrentLogBulk(state, action: PayloadAction<Partial<InteractionData>>) {
+      state.currentLog = {
+        ...state.currentLog,
+        ...action.payload
+      };
+      
+      // Auto-update specialty if HCP name is changed
+      if (action.payload.hcpName) {
+        const found = state.hcps.find(
+          (h) => h.name.toLowerCase() === action.payload.hcpName!.toLowerCase()
+        );
+        if (found) {
+          state.currentLog.hcpSpecialty = found.specialty;
+        }
+      }
+    },
     resetCurrentLog(state) {
       state.currentLog = { ...initialCurrentLog };
       state.activeLangGraphNode = "GREETING";
@@ -255,6 +271,7 @@ const crmSlice = createSlice({
 export const {
   setActiveTab,
   updateCurrentLogField,
+  updateCurrentLogBulk,
   resetCurrentLog,
   setLangGraphNode,
   addManualChatMessage,
