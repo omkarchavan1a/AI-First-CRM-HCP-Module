@@ -123,6 +123,8 @@ const crmSlice = createSlice({
         );
         if (found) {
           state.currentLog.hcpSpecialty = found.specialty;
+          state.currentLog.hcpNpi = found.npi;
+          state.currentLog.hcpLicense = found.licenseNumber;
         }
       }
     },
@@ -139,6 +141,8 @@ const crmSlice = createSlice({
         );
         if (found) {
           state.currentLog.hcpSpecialty = found.specialty;
+          state.currentLog.hcpNpi = found.npi;
+          state.currentLog.hcpLicense = found.licenseNumber;
         }
       }
     },

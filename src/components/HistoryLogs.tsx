@@ -81,9 +81,14 @@ export default function HistoryLogs() {
 
                   {/* HCP Practitioner */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col space-y-0.5">
                       <span className="font-semibold text-slate-900">{log.hcpName}</span>
-                      <span className="text-[10px] text-slate-400">{log.hcpSpecialty}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{log.hcpSpecialty}</span>
+                      {log.hcpLicense && (
+                        <span className="text-[8.5px] font-mono text-slate-400 bg-slate-100 px-1 py-0.5 rounded border border-slate-200/50 w-max">
+                          Lic: {log.hcpLicense} | NPI: {log.hcpNpi}
+                        </span>
+                      )}
                     </div>
                   </td>
 
@@ -122,9 +127,16 @@ export default function HistoryLogs() {
                         <span className="text-slate-400 italic text-[10px]">None</span>
                       )}
                       {log.complianceVerified && (
-                        <span className="text-[8px] font-bold text-emerald-600 uppercase mt-1 flex items-center gap-0.5">
-                          <CheckCircle className="h-2.5 w-2.5" /> PDMA Signature OK
-                        </span>
+                        <div className="mt-1 space-y-0.5">
+                          <span className="text-[8px] font-bold text-emerald-600 uppercase flex items-center gap-0.5">
+                            <CheckCircle className="h-2.5 w-2.5" /> PDMA Signature OK
+                          </span>
+                          {log.complianceHash && (
+                            <span className="font-mono text-[7px] text-slate-400 block max-w-[120px] truncate" title={log.complianceHash}>
+                              {log.complianceHash}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>

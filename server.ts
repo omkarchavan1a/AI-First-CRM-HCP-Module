@@ -24,10 +24,10 @@ const ai = new GoogleGenAI({
 
 // In-Memory Database for Demo Persistence
 const hcps = [
-  { id: "hcp-1", name: "Dr. Sarah Jenkins", specialty: "Cardiology", institution: "Mayo Clinic", email: "s.jenkins@mayoclinic.org", phone: "555-0143" },
-  { id: "hcp-2", name: "Dr. Marcus Vance", specialty: "Oncology", institution: "MD Anderson Cancer Center", email: "mvance@mdanderson.org", phone: "555-0198" },
-  { id: "hcp-3", name: "Dr. Elena Rostova", specialty: "Pediatrics", institution: "Seattle Children's Hospital", email: "elena.rostova@seattlechildrens.org", phone: "555-0231" },
-  { id: "hcp-4", name: "Dr. Amit Patel", specialty: "Endocrinology", institution: "Joslin Diabetes Center", email: "apatel@joslin.harvard.edu", phone: "555-0312" }
+  { id: "hcp-1", name: "Dr. Sarah Jenkins", specialty: "Cardiology", institution: "Mayo Clinic", email: "s.jenkins@mayoclinic.org", phone: "555-0143", npi: "1982736450", licenseNumber: "MN-LIC-449102", licenseStatus: "Active / Verified (MN Board of Medical Practice)" },
+  { id: "hcp-2", name: "Dr. Marcus Vance", specialty: "Oncology", institution: "MD Anderson Cancer Center", email: "mvance@mdanderson.org", phone: "555-0198", npi: "1437298314", licenseNumber: "TX-LIC-882310", licenseStatus: "Active / Verified (Texas Medical Board)" },
+  { id: "hcp-3", name: "Dr. Elena Rostova", specialty: "Pediatrics", institution: "Seattle Children's Hospital", email: "elena.rostova@seattlechildrens.org", phone: "555-0231", npi: "1092837411", licenseNumber: "WA-LIC-339281", licenseStatus: "Active / Verified (WA Department of Health)" },
+  { id: "hcp-4", name: "Dr. Amit Patel", specialty: "Endocrinology", institution: "Joslin Diabetes Center", email: "apatel@joslin.harvard.edu", phone: "555-0312", npi: "1847392842", licenseNumber: "MA-LIC-552918", licenseStatus: "Active / Verified (MA Board of Registration in Medicine)" }
 ];
 
 const mockInteractions = [

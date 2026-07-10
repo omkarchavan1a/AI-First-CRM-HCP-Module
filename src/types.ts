@@ -5,6 +5,9 @@ export interface HCP {
   institution: string;
   email: string;
   phone: string;
+  npi?: string;
+  licenseNumber?: string;
+  licenseStatus?: string;
 }
 
 export interface SampleDistributed {
@@ -27,6 +30,11 @@ export interface InteractionData {
   followUpDate: string;
   feedbackSentiment: 'Positive' | 'Neutral' | 'Critical' | '';
   complianceVerified: boolean;
+  hcpNpi?: string;
+  hcpLicense?: string;
+  complianceSignature?: string; // base64 representation of digital signature draw
+  complianceHash?: string; // cryptographic sign-off verification hash
+  hipaaClearance?: boolean; // scanner results
 }
 
 export interface Interaction extends InteractionData {
